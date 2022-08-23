@@ -4,8 +4,8 @@
 channel actor:
 
 produceInc(new single thread), produceDec(new single thread)
--> channel 
--> actor(new single thread)
+-> actor channel 
+-> actor consumer block(new single thread)
 ```
 
 ```
