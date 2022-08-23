@@ -32,6 +32,21 @@ open class AllCaseKtTest {
         actor(n, Channel.UNLIMITED)
     }
 
+//    @Benchmark
+//    fun channelRENDEZVOUS() {
+//        channel(n, Channel(Channel.RENDEZVOUS))
+//    }
+//
+//    @Benchmark
+//    fun channelBUFFERED() {
+//        channel(n, Channel(bufferSize))
+//    }
+//
+//    @Benchmark
+//    fun channelUNLIMITED() {
+//        channel(n, Channel(Channel.UNLIMITED))
+//    }
+
     @Benchmark
     fun executorSynchronousQueue() {
         executor(n, SynchronousQueue())

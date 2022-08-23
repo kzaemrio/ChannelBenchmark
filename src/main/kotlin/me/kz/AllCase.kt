@@ -2,6 +2,7 @@ package me.kz
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.launch
@@ -57,6 +58,43 @@ fun executor(n: Int, queue: BlockingQueue<Message>) {
     produceInc.shutdown()
     produceDec.shutdown()
     consumer.shutdown()
+}
+
+fun channel(n: Int, channel: Channel<Message>): Unit = runBlocking {
+    val consumer = launch(Dispatchers.IO) {
+        var i = 0
+        while (true) {
+            val result = channel.receive().invoke(i) // suspend receive
+            if (result == POISON_PILL) {
+                break
+            } else {
+                i = result
+            }
+        }
+    }
+
+    val produceInc = launch(Dispatchers.IO) {
+        val inc: Message = { it + 1 }
+        repeat(n) {
+            channel.send(inc) // suspend send
+        }
+    }
+
+    val produceDec = launch(Dispatchers.IO) {
+        launch {
+            val dec: Message = { it - 1 }
+            repeat(n) {
+                channel.send(dec) // suspend send
+            }
+        }
+    }
+
+    produceInc.join() // suspend wait
+    produceDec.join() // suspend wait
+
+    channel.send { POISON_PILL }
+
+    consumer.join() // suspend wait
 }
 
 @OptIn(ObsoleteCoroutinesApi::class)
