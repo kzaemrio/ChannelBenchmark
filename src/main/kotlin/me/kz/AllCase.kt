@@ -21,7 +21,7 @@ fun executor(n: Int, queue: BlockingQueue<Message>) {
     consumer.execute {
         var i = 0
         while (true) {
-            val result = queue.take().invoke(i)
+            val result = queue.take().invoke(i) // blocking take
             if (result == POISON_PILL) {
                 break
             } else {
@@ -33,26 +33,26 @@ fun executor(n: Int, queue: BlockingQueue<Message>) {
     produceInc.execute {
         val inc: Message = { it + 1 }
         repeat(n) {
-            queue.put(inc)
+            queue.put(inc) // blocking put
         }
     }
 
     produceDec.execute {
         val dec: Message = { it - 1 }
         repeat(n) {
-            queue.put(dec)
+            queue.put(dec) // blocking put
         }
     }
 
     val incEnd = produceInc.submit { }
     val decEnd = produceDec.submit { }
 
-    incEnd.get()
-    decEnd.get()
+    incEnd.get() // blocking wait
+    decEnd.get() // blocking wait
 
     queue.put { POISON_PILL }
 
-    consumer.submit { }.get()
+    consumer.submit { }.get() // blocking wait
 
     produceInc.shutdown()
     produceDec.shutdown()
@@ -64,7 +64,7 @@ fun actor(n: Int, capacity: Int): Unit = runBlocking {
     val actor: SendChannel<Message> = actor(Dispatchers.IO, capacity = capacity) {
         var i = 0
         while (true) {
-            val result = receive().invoke(i)
+            val result = receive().invoke(i) // suspend receive
             if (result == POISON_PILL) {
                 break
             } else {
@@ -76,7 +76,7 @@ fun actor(n: Int, capacity: Int): Unit = runBlocking {
     val produceInc = launch(Dispatchers.IO) {
         val inc: Message = { it + 1 }
         repeat(n) {
-            actor.send(inc)
+            actor.send(inc) // suspend send
         }
     }
 
@@ -84,13 +84,13 @@ fun actor(n: Int, capacity: Int): Unit = runBlocking {
         launch {
             val dec: Message = { it - 1 }
             repeat(n) {
-                actor.send(dec)
+                actor.send(dec) // suspend send
             }
         }
     }
 
-    produceInc.join()
-    produceDec.join()
+    produceInc.join() // suspend wait
+    produceDec.join() // suspend wait
 
     actor.send { POISON_PILL }
 
